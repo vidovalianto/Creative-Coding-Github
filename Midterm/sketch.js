@@ -11,16 +11,37 @@ let curTime
 let tutorTime
 let button
 let tutorialFoodPos
+let resultDogPos
+let bgSound
+let sqSound
+let dgSound
+
+function preload() {
+  soundFormats('mp3');
+  bgSound = loadSound('bg');
+  sqSound = loadSound('sq');
+  dgSound = loadSound('dg');
+}
+
 
 function setup() {
   createCanvas(600, 700);
   resetState()
+  bgSound.loop()
 }
 
 function initState() {
   tutorialFoodPos = { x: width/2,
                       y: height*8/10 - 20, 
                       size: min(width,height)/10
+                   }
+  
+  resultDogPos = { x: width/2, 
+             y: height*2/5, 
+             vx: 3,
+             vy: 0,
+             size: min(width,height)/7, 
+             isWink: 0
                    }
   
   const stateData = {
@@ -128,6 +149,9 @@ function draw() {
     return true
   })
   } else if (state.time <= 0) {
+    grassPos.forEach((obj) => {
+    generateGrass(obj)
+  })
     push()
     textAlign(CENTER, BASELINE);
     fill(255)
@@ -143,13 +167,21 @@ function draw() {
       text("Doge🐶 is going to eat you when you sleep", width/2, height/4)
       text("(you didn't feed him enough)", width/2, height/4 + height/30)
     }
+    drawDog(resultDogPos)
+    
+    push()
+      rectMode(CENTER)
+      stroke(0,0,0,10)
+      fill(0,0,0,30)
+      rect(width/2, height*3/5 + height/10 - 5, 285, 40, 25)
+      pop()
     textFont('Helvetica', height/40)
-    text("Score", width/2, height/2 - height/15)
+    text("Score", width/2, height*3/5 - height/15)
     textFont('Helvetica', height/15)
-    text(state.score, width/2, height/2)
+    text(state.score, width/2, height*3/5)
     
     textFont('Helvetica', height/40)
-    text("Click r to Restart Game", width/2, height/2 + height/10)
+    text("Click r to Restart Game", width/2, height*3/5 + height/10)
     pop()
   } else {
     grassPos.forEach((obj) => {
@@ -207,10 +239,15 @@ function draw() {
       let isHits = state.isIntersect(obj, obs)
       if (isHits) {
         obs.isWink = 120
+        sqSound.play()
       }
       return isHits
     })
     if (obj.y - obj.size <= 0 || isHit || isHitObs || obj.y + obj.size >= height || obj.lifespan <= 0) {
+      if (isHit) {
+        dgSound.play()
+      }
+      
       state.dogPos.isWink = isHit ? 120 : 0
       state.score += isHit ? 1 : 0
       return false 
