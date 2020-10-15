@@ -331,11 +331,13 @@ function drawObstacle(obj,isWink) {
   pop()
 }
 
-function drawFood(obj,isPoison) {
+function drawFood(obj,isPoison, isTutorial) {
   push()
   noStroke()
-  fill('#8EFFC1')
-  circle(obj.x,obj.y,obj.size)
+  if (isTutorial) {
+   fill('#8EFFC1')
+   circle(obj.x,obj.y,obj.size) 
+  }
   pop()
   
   push()

@@ -15,12 +15,15 @@ let resultDogPos
 let bgSound
 let sqSound
 let dgSound
+let hwlSound
+let isHitPoison
 
 function preload() {
   soundFormats('mp3');
   bgSound = loadSound('bg');
   sqSound = loadSound('sq');
   dgSound = loadSound('dg');
+  hwlSound = loadSound('howl');
 }
 
 
@@ -66,7 +69,8 @@ function draw() {
   background('#1DBC60');
   rotAmount = Math.atan2(mouseY-state.foodPos.y, mouseX-state.foodPos.x);
   const mouseDist = dist(mouseX, mouseY, state.foodPos.x, state.foodPos.y)
-  scaleAmount = map(mouseDist, 0, 700, 0.7, 1.2)
+  // scaleAmount = map(mouseDist, 0, 700, 0.7, 1.2)
+  scaleAmount = 0.7
   
   if (state.state === state.states[0]) {
     let startTime = millis()
@@ -77,12 +81,12 @@ function draw() {
     drawFood({x: width*3/4,
               y: height*1/3,
               size: height/5
-             })
+             }, false, true)
     
     drawFood({x: width/4,
               y: height*1/3,
               size: height/5
-             }, true)
+             }, true, true)
     
     drawObstacle({x: width/4,
               y: height*9/15,
@@ -130,8 +134,6 @@ function draw() {
     text("Tap Space to Launch", width/2, height*10/12 + 10)
     text("Use Mouse to Aim", width/2, height*7/10)
     text("Aim to Doge", width*2/7, tutorialFoodPos.y)
-    text("Tap c to change food", width*4/5, tutorialFoodPos.y)
-    textFont('Helvetica', height/60)
     pop()
       
     state.foodsThrown = state.foodsThrown.filter( (obj) => {
@@ -180,6 +182,7 @@ function draw() {
     textFont('Helvetica', height/15)
     text(state.score, width/2, height*3/5)
     
+    fill(255)
     textFont('Helvetica', height/40)
     text("Click r to Restart Game", width/2, height*3/5 + height/10)
     pop()
@@ -194,8 +197,6 @@ function draw() {
     
     textFont('Helvetica', height/50)
     text("Click Space to Throw", width/2, height*30/31)
-    textFont('Helvetica', height/60)
-    text("<- Tap c to change food ->", width/2, height*8/10)
     pop()
   
   const timeElapsed = millis() - curTime
@@ -209,6 +210,9 @@ function draw() {
   textFont('Helvetica', height/40)
   text("Score", width/10, height*8/9 - height/15)
   textFont('Helvetica', height/15)
+  if (isHitPoison) {
+    fill('red')
+  }
   text(state.score, width/10, height*8/9)
   pop()
   
@@ -245,11 +249,18 @@ function draw() {
     })
     if (obj.y - obj.size <= 0 || isHit || isHitObs || obj.y + obj.size >= height || obj.lifespan <= 0) {
       if (isHit) {
-        dgSound.play()
+        if (obj.isPoison) {
+          hwlSound.play()
+          state.score += -1
+          isHitPoison = true
+          print(isHitPoison)
+        } else {
+          dgSound.play()
+          state.score += 1
+          state.dogPos.isWink = 120 
+          isHitPoison = false
+        }
       }
-      
-      state.dogPos.isWink = isHit ? 120 : 0
-      state.score += isHit ? 1 : 0
       return false 
     }
     state.reverseDirection(obj)
@@ -267,9 +278,9 @@ function draw() {
     drawObstacle(obj, obj.isWink > 0)
   })
   
-  if (state.obstacles.length + 1 <= state.score/5 && state.obstacles.length < 3) {
+  if (state.obstacles.length + 1 <= state.score/10 && state.obstacles.length < 2) {
     state.obstacles.push({
-      x: width/2,
+      x: 0,
       y: (state.obstacles.length + 1)*height/4.5,
       size: width/12,
       vx: 2,
@@ -313,26 +324,18 @@ function keyPressed() {
   if (key === "r") {
     resetState()
   } else if (key === " " && state.time > 0) {
-    if (isPoison) {
-      state.score -= state.state !== state.states[0] ? 1 : 0
-    }
-      
     velocity = {x: mouseX-state.foodPos.x, 
                 y: mouseY-state.foodPos.y}
-      
     state.foodsThrown.push({
       x: state.state === state.states[0] ? tutorialFoodPos.x : state.foodPos.x, 
       y: state.state === state.states[0] ? tutorialFoodPos.y : state.foodPos.y,
-      vx: isPoison ? 0 : velocity.x/10,
-      vy: isPoison ? -2 : velocity.y/10,
+      vx: velocity.x/10,
+      vy: velocity.y/10,
       size: min(width,height)/10,
-      lifespan: isPoison ? 60 : 180,
+      lifespan: 180,
       isPoison: isPoison 
     })
       isPoison = nextIsPoison
       nextIsPoison = random(0,isTutorial ? poisonRange * 2 : 10) < poisonRange ? true : false
-  } else if (key === "c") {
-    isPoison = nextIsPoison
-    nextIsPoison = random(0,isTutorial ? poisonRange * 2 : 10) < poisonRange ? true : false
-  } 
+  }
 }
